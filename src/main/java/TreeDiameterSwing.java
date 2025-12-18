@@ -629,7 +629,6 @@ public class TreeDiameterSwing extends JFrame {
         System.out.println("Запуск программы поиска диаметра дерева");
         System.out.println("========================================");
 
-        // Добавляем обработчик завершения программы
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Программа завершена");
             System.out.println("========================================");
