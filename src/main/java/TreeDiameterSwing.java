@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
 import java.io.*;
@@ -59,7 +60,7 @@ public class TreeDiameterSwing extends JFrame {
 
     public TreeDiameterSwing() {
         setTitle("Поиск диаметра дерева (взвешенные графы)");
-        setSize(1100, 800);
+        setSize(1200, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -323,9 +324,9 @@ public class TreeDiameterSwing extends JFrame {
         diameterLength = diameterPath.size() - 1;
 
         System.out.println("Диаметр найден:");
-        System.out.println("- Длина (рёбра): " + diameterLength);
-        System.out.println("- Вес: " + diameterWeight);
-        System.out.print("- Путь: ");
+        System.out.println("• Длина (количество рёбер): " + diameterLength);
+        System.out.println("• Вес: " + diameterWeight);
+        System.out.print("• Путь: ");
         for (Vertex v : diameterPath) {
             System.out.print(v.id + " ");
         }
@@ -353,76 +354,53 @@ public class TreeDiameterSwing extends JFrame {
         return new DFSResult(farthest, maxDist, maxWeight);
     }
 
-    private List<Vertex> findPath(Vertex start, Vertex end) {
-        Map<Vertex, Vertex> parent = new HashMap<>();
-        Queue<Vertex> queue = new LinkedList<>();
-        Set<Vertex> visited = new HashSet<>();
-
-        queue.add(start);
-        visited.add(start);
-        parent.put(start, null);
-
-        while (!queue.isEmpty()) {
-            Vertex v = queue.poll();
-            if (v == end) break;
-
-            for (Edge edge : v.edges) {
-                Vertex n = (edge.u == v) ? edge.v : edge.u;
-                if (!visited.contains(n)) {
-                    visited.add(n);
-                    parent.put(n, v);
-                    queue.add(n);
-                }
-            }
-        }
-
-        List<Vertex> path = new ArrayList<>();
-        Vertex v = end;
-        while (v != null) {
-            path.add(0, v);
-            v = parent.get(v);
-        }
-        return path;
-    }
-
     private List<Vertex> findWeightedPath(Vertex start, Vertex end) {
-        Map<Vertex, Integer> distance = new HashMap<>();
-        Map<Vertex, Vertex> parent = new HashMap<>();
-        PriorityQueue<Vertex> pq = new PriorityQueue<>(Comparator.comparingInt(distance::get));
-        Set<Vertex> visited = new HashSet<>();
-
-        for (Vertex v : vertices) {
-            distance.put(v, Integer.MAX_VALUE);
+        if (start == null || end == null || vertices.isEmpty()) {
+            return new ArrayList<>();
         }
 
-        distance.put(start, 0);
-        pq.add(start);
+        if (start == end) {
+            return Collections.singletonList(start);
+        }
 
-        while (!pq.isEmpty()) {
-            Vertex current = pq.poll();
-            if (visited.contains(current)) continue;
-            visited.add(current);
+        Map<Vertex, Vertex> parent = new HashMap<>();
+        Stack<Vertex> stack = new Stack<>();
+        Set<Vertex> visited = new HashSet<>();
 
-            if (current == end) break;
+        stack.push(start);
+        parent.put(start, null);
+        visited.add(start);
+
+        // DFS
+        while (!stack.isEmpty()) {
+            Vertex current = stack.pop();
+
+            if (current == end) {
+                break;
+            }
 
             for (Edge edge : current.edges) {
                 Vertex neighbor = (edge.u == current) ? edge.v : edge.u;
-                int newDist = distance.get(current) + edge.weight;
-
-                if (newDist < distance.get(neighbor)) {
-                    distance.put(neighbor, newDist);
+                if (!visited.contains(neighbor)) {
+                    visited.add(neighbor);
                     parent.put(neighbor, current);
-                    pq.add(neighbor);
+                    stack.push(neighbor);
                 }
             }
         }
 
         List<Vertex> path = new ArrayList<>();
-        Vertex v = end;
-        while (v != null) {
-            path.add(0, v);
-            v = parent.get(v);
+        for (Vertex v = end; v != null; v = parent.get(v)) {
+            path.add(v);
         }
+
+        Collections.reverse(path);
+
+        if (path.isEmpty() || path.get(0) != start) {
+            System.out.println("Путь не найден: " + start.id + " -> " + end.id);
+            return new ArrayList<>();
+        }
+
         return path;
     }
 
@@ -445,11 +423,7 @@ public class TreeDiameterSwing extends JFrame {
         String classLocation = TreeDiameterSwing.class.getProtectionDomain()
                 .getCodeSource().getLocation().getPath();
 
-        try {
-            classLocation = java.net.URLDecoder.decode(classLocation, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        classLocation = java.net.URLDecoder.decode(classLocation, StandardCharsets.UTF_8);
 
         File classFile = new File(classLocation);
 
@@ -482,8 +456,8 @@ public class TreeDiameterSwing extends JFrame {
         JButton showBtn = new JButton("Показать диаметр");
         JButton resetBtn = new JButton("Сбросить отображение диаметра");
         JButton randomBtn = new JButton("Создать случайное дерево");
-        JButton edgesBtn = new JButton("Загрузить список рёбер");
-        JButton matrixBtn = new JButton("Загрузить матрицу смежности");
+        JButton edgesBtn = new JButton("Загрузка дерева из списка рёбер");
+        JButton matrixBtn = new JButton("Загрузка дерева из матрицы смежности");
 
         showBtn.addActionListener(e -> {
             showPath();
@@ -642,8 +616,8 @@ public class TreeDiameterSwing extends JFrame {
             }
 
             for (Edge edge : edges) {
-                g2d.setColor(Color.ORANGE);
-                g2d.setFont(new Font("Arial", Font.BOLD, 18));
+                g2d.setColor(Color.RED);
+                g2d.setFont(new Font("Arial", Font.BOLD, 20));
                 int midX = (edge.u.x + edge.v.x) / 2;
                 int midY = (edge.u.y + edge.v.y) / 2;
                 g2d.drawString(edge.weightLabel, midX - 10, midY - 10);
