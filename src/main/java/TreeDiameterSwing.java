@@ -16,7 +16,7 @@ public class TreeDiameterSwing extends JFrame {
 
         Vertex(int id) {
             this.id = id;
-            this.color = Color.BLUE;
+            this.color = Color.gray;
             this.edges = new ArrayList<>();
             this.weights = new HashMap<>();
         }
@@ -60,7 +60,7 @@ public class TreeDiameterSwing extends JFrame {
 
     public TreeDiameterSwing() {
         setTitle("Поиск диаметра дерева (взвешенные графы)");
-        setSize(1200, 800);
+        setSize(1300, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -71,10 +71,12 @@ public class TreeDiameterSwing extends JFrame {
     }
 
     private void createSampleTree() {
+        System.out.println("=== СОЗДАНИЕ ТЕСТОВОГО ДЕРЕВА ===");
 
         for (int i = 0; i < 10; i++) {
             vertices.add(new Vertex(i));
         }
+        System.out.println("Создано " + vertices.size() + " вершин");
 
         for (int i = 0; i < vertices.size(); i++) {
             double angle = 2 * Math.PI * i / vertices.size();
@@ -92,7 +94,7 @@ public class TreeDiameterSwing extends JFrame {
         addEdge(7, 8, 1);
         addEdge(8, 9, 1);
 
-        System.out.println("Создано дерево: " + vertices.size() + " вершин, " + edges.size() + " рёбер");
+        System.out.println("Дерево создано успешно\n");
     }
 
     private void addEdge(int uId, int vId, int weight) {
@@ -113,6 +115,8 @@ public class TreeDiameterSwing extends JFrame {
         v.edges.add(edge);
         u.weights.put(v, weight);
         v.weights.put(u, weight);
+
+        System.out.println("Добавлено ребро: " + uId + " - " + vId + " (вес: " + weight + ")");
     }
 
     private void addEdge(int uId, int vId) {
@@ -162,7 +166,8 @@ public class TreeDiameterSwing extends JFrame {
     }
 
     private void loadFromEdgeList(String filename) {
-        System.out.println("Загрузка дерева из списка рёбер: " + filename);
+        System.out.println("\n=== ЗАГРУЗКА ИЗ СПИСКА РЁБЕР ===");
+        System.out.println("Файл: " + filename);
 
         vertices.clear();
         edges.clear();
@@ -197,7 +202,7 @@ public class TreeDiameterSwing extends JFrame {
             System.out.println("Загружено " + edgeCount + " рёбер");
 
             if (!isTree()) {
-                System.out.println("Загруженный граф не является деревом!");
+                System.out.println("ОШИБКА: Загруженный граф не является деревом!");
                 vertices.clear();
                 edges.clear();
                 diameterPath.clear();
@@ -233,7 +238,8 @@ public class TreeDiameterSwing extends JFrame {
     }
 
     private void loadFromAdjacencyMatrix(String filename) {
-        System.out.println("Загрузка дерева из матрицы смежности: " + filename);
+        System.out.println("\n=== ЗАГРУЗКА ИЗ МАТРИЦЫ СМЕЖНОСТИ ===");
+        System.out.println("Файл: " + filename);
 
         vertices.clear();
         edges.clear();
@@ -266,7 +272,7 @@ public class TreeDiameterSwing extends JFrame {
             System.out.println("Загружено " + edgeCount + " рёбер");
 
             if (!isTree()) {
-                System.out.println("Загруженный граф не является деревом!");
+                System.out.println("ОШИБКА: Загруженный граф не является деревом!");
                 vertices.clear();
                 edges.clear();
                 diameterPath.clear();
@@ -312,25 +318,34 @@ public class TreeDiameterSwing extends JFrame {
     private void findDiameter() {
         if (vertices.isEmpty()) return;
 
+        System.out.println("\n=== ПОИСК ДИАМЕТРА ДЕРЕВА ===");
 
+        System.out.println("Шаг 1: Первый обход DFS из случайной вершины (0)");
         DFSResult r1 = dfs(vertices.get(0), null);
         Vertex v1 = r1.farthest;
+        System.out.println("Найдена самая удалённая вершина от 0: V" + v1.id +
+                           " (расстояние: " + r1.distance + " рёбер, вес: " + r1.totalWeight + ")");
 
+        System.out.println("\nШаг 2: Второй обход DFS из вершины V" + v1.id);
         DFSResult r2 = dfs(v1, null);
         Vertex v2 = r2.farthest;
+        System.out.println("Найдена самая удалённая вершина от V" + v1.id + ": V" + v2.id +
+                           " (расстояние: " + r2.distance + " рёбер, вес: " + r2.totalWeight + ")");
 
+        System.out.println("\nШаг 3: Поиск пути между V" + v1.id + " и V" + v2.id);
         diameterPath = findWeightedPath(v1, v2);
         diameterWeight = calculatePathWeight(diameterPath);
         diameterLength = diameterPath.size() - 1;
 
         System.out.println("Диаметр найден:");
         System.out.println("• Длина (количество рёбер): " + diameterLength);
-        System.out.println("• Вес: " + diameterWeight);
+        System.out.println("• Суммарный вес: " + diameterWeight);
         System.out.print("• Путь: ");
         for (Vertex v : diameterPath) {
             System.out.print(v.id + " ");
         }
         System.out.println();
+        System.out.println("=== ПОИСК ДИАМЕТРА ЗАВЕРШЁН ===\n");
     }
 
     private DFSResult dfs(Vertex current, Vertex parent) {
@@ -371,7 +386,6 @@ public class TreeDiameterSwing extends JFrame {
         parent.put(start, null);
         visited.add(start);
 
-        // DFS
         while (!stack.isEmpty()) {
             Vertex current = stack.pop();
 
@@ -495,20 +509,66 @@ public class TreeDiameterSwing extends JFrame {
         infoLabel.setFont(new Font("Dialog", Font.PLAIN, 16));
         infoPanel.add(infoLabel);
 
+        JPanel legendPanel = createLegendPanel();
+
         add(drawingPanel, BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
         add(infoPanel, BorderLayout.EAST);
+        add(legendPanel, BorderLayout.WEST);
+    }
+
+    private JPanel createLegendPanel() {
+        JPanel legendPanel = new JPanel();
+        legendPanel.setLayout(new BoxLayout(legendPanel, BoxLayout.Y_AXIS));
+        legendPanel.setBorder(BorderFactory.createTitledBorder("Обозначения"));
+        legendPanel.setPreferredSize(new Dimension(250, 300));
+
+        addLegendItem(legendPanel, Color.gray, "Обычная вершина / скрыт диаметр");
+        addLegendItem(legendPanel, Color.GREEN.darker(), "Начало и конец диаметра");
+        addLegendItem(legendPanel, Color.YELLOW.darker(), "Вершина на пути диаметра");
+        addLegendItem(legendPanel, Color.BLACK, "Обычное ребро");
+        addLegendItem(legendPanel, Color.ORANGE, "Ребро на пути диаметра");
+
+        JLabel weightLabel = new JLabel("Числа на рёбрах - вес");
+        weightLabel.setFont(new Font("Dialog", Font.ITALIC, 12));
+        weightLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        legendPanel.add(weightLabel);
+
+        return legendPanel;
+    }
+
+    private void addLegendItem(JPanel panel, Color color, String text) {
+        JPanel itemPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        JLabel colorLabel = new JLabel();
+        colorLabel.setPreferredSize(new Dimension(20, 20));
+        colorLabel.setBackground(color);
+        colorLabel.setOpaque(true);
+        if (!text.contains("ребро")) {
+            colorLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        }
+
+        JLabel textLabel = new JLabel(text);
+        textLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
+
+        itemPanel.add(colorLabel);
+        itemPanel.add(textLabel);
+        itemPanel.setMaximumSize(new Dimension(230, 30));
+
+        panel.add(itemPanel);
     }
 
     private void showPath() {
-        System.out.println("Отображение пути диаметра");
+        System.out.println("\n=== ОТОБРАЖЕНИЕ ДИАМЕТРА ===");
 
-        for (Vertex v : vertices) v.color = Color.BLUE;
+        for (Vertex v : vertices) v.color = Color.gray;
         for (Edge e : edges) e.color = Color.BLACK;
 
         for (int i = 0; i < diameterPath.size(); i++) {
             Vertex v = diameterPath.get(i);
-            v.color = (i == 0 || i == diameterPath.size() - 1) ? Color.GREEN : Color.YELLOW;
+            v.color = (i == 0 || i == diameterPath.size() - 1) ? Color.green.darker() : Color.yellow.darker();
+            System.out.println("Вершина V" + v.id + " окрашена в " +
+                               (i == 0 || i == diameterPath.size() - 1 ? "зелёный (конец диаметра)" : "жёлтый (часть диаметра)"));
         }
 
         for (int i = 0; i < diameterPath.size() - 1; i++) {
@@ -516,7 +576,8 @@ public class TreeDiameterSwing extends JFrame {
             Vertex v = diameterPath.get(i + 1);
             for (Edge e : edges) {
                 if ((e.u == u && e.v == v) || (e.u == v && e.v == u)) {
-                    e.color = Color.RED;
+                    e.color = Color.ORANGE;
+                    System.out.println("Ребро V" + u.id + " - V" + v.id + " окрашено в красный (часть диаметра)");
                     break;
                 }
             }
@@ -524,18 +585,20 @@ public class TreeDiameterSwing extends JFrame {
 
         drawingPanel.repaint();
         updateInfo();
+        System.out.println("Диаметр отображен на графе\n");
     }
 
     private void reset() {
-        System.out.println("Сброс отображения");
+        System.out.println("\n=== СБРОС ОТОБРАЖЕНИЯ ===");
 
-        for (Vertex v : vertices) v.color = Color.BLUE;
+        for (Vertex v : vertices) v.color = Color.gray;
         for (Edge e : edges) e.color = Color.BLACK;
         drawingPanel.repaint();
+        System.out.println("Все вершины и рёбра возвращены к исходным цветам\n");
     }
 
     private void randomTree() {
-        System.out.println("Генерация случайного дерева");
+        System.out.println("\n=== ГЕНЕРАЦИЯ СЛУЧАЙНОГО ДЕРЕВА ===");
 
         Random rand = new Random();
         int n = 6 + rand.nextInt(6);
@@ -559,14 +622,13 @@ public class TreeDiameterSwing extends JFrame {
             int weight = 1 + rand.nextInt(10);
             addEdge(connectTo, i, weight);
             connected.add(i);
-            System.out.println("Добавлено ребро: " + connectTo + " - " + i + " (вес: " + weight + ")");
         }
 
         setPositions();
         findDiameter();
         drawingPanel.repaint();
         updateInfo();
-        System.out.println("Случайное дерево создано");
+        System.out.println("Случайное дерево создано\n");
     }
 
     private void updateInfo() {
@@ -601,7 +663,7 @@ public class TreeDiameterSwing extends JFrame {
 
             for (Edge edge : edges) {
                 g2d.setColor(edge.color);
-                g2d.setStroke(new BasicStroke(edge.color == Color.RED ? 5 : 2));
+                g2d.setStroke(new BasicStroke(edge.color == Color.ORANGE ? 5 : 2));
                 g2d.drawLine(edge.u.x, edge.u.y, edge.v.x, edge.v.y);
             }
 
